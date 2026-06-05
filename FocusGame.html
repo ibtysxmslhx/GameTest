@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Focus Defender: Shield the Brain!</title>
+    <!-- Tailwind CSS for state-of-the-art UI elements and glassmorphism -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Supporting system-matched dark/light theme switching natively
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome icons for retro-modern buttons and achievements -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font: Inter for premium geometric typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+        /* Custom smooth transition styles for theme swaps */
+        .theme-transition {
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* Glowing neon effect classes */
+        .glow-indigo {
+            box-shadow: 0 0 20px rgba(79, 70, 229, 0.3);
+        }
+        .dark .glow-indigo {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 dark:bg-slate-950 dark:text-slate-100 min-h-screen flex flex-col theme-transition">
+
+    <!-- GAME HEADER -->
+    <header class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-150 dark:border-slate-800 sticky top-0 z-50 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md flex items-center justify-center">
+                    <i class="fa-solid fa-gamepad text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-lg tracking-tight text-slate-900 dark:text-white">Focus<span class="text-indigo-600 dark:text-indigo-400">Defender</span></h1>
+                    <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-wide uppercase">Arcade Mental Wellness Game</p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-3">
+                <!-- Theme toggle switch -->
+                <button onclick="toggleTheme()" id="theme-toggle" class="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:scale-105 transition-all" title="Toggle Light/Dark Theme">
+                    <i id="theme-toggle-icon" class="fa-solid fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:grid lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: The Main Game Canvas & Game Controls (Col span 8) -->
+        <div class="lg:col-span-8 flex flex-col space-y-4">
+            
+            <!-- Floating scoreboard & high contrast game statistics -->
+            <div class="bg-white dark:bg-slate-900 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-wrap items-center justify-between gap-4 theme-transition">
+                <div class="flex items-center space-x-4">
+                    <div class="px-3.5 py-1.5 bg-indigo-50 dark:bg-indigo-950/40 rounded-xl border border-indigo-150 dark:border-indigo-900/40 flex items-center space-x-2">
+                        <i class="fa-solid fa-star text-amber-500 animate-pulse"></i>
+                        <span class="text-xs font-black">Score: <span id="ui-score" class="text-indigo-600 dark:text-indigo-400">0</span></span>
+                    </div>
+                    <div class="px-3.5 py-1.5 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-150 dark:border-emerald-900/40 flex items-center space-x-2">
+                        <i class="fa-solid fa-coins text-yellow-500"></i>
+                        <span class="text-xs font-black">Coins: <span id="ui-coins" class="text-emerald-600 dark:text-emerald-400">0</span></span>
+                    </div>
+                </div>
+
+                <!-- Combo Multiplier indicator -->
+                <div id="ui-combo-container" class="hidden animate-bounce px-3 py-1 bg-gradient-to-r from-rose-500 to-indigo-600 text-white text-xs font-extrabold rounded-full shadow-md">
+                    ⚡ COMBO x<span id="ui-combo">1</span>
+                </div>
+
+                <!-- Heart Container -->
+                <div class="flex items-center space-x-1.5" id="heart-container">
+                    <i class="fa-solid fa-heart text-rose-500 text-lg"></i>
+                    <i class="fa-solid fa-heart text-rose-500 text-lg"></i>
+                    <i class="fa-solid fa-heart text-rose-500 text-lg"></i>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="relative bg-white dark:bg-slate-900 rounded-3xl border border-slate-150 dark:border-slate-800 shadow-lg overflow-hidden flex-grow flex items-center justify-center min-h-[400px] sm:min-h-[500px] theme-transition glow-indigo">
+                
+                <!-- Game Canvas -->
+                <canvas id="game-canvas" class="block w-full h-full cursor-none"></canvas>
+
+                <!-- Touch Control Prompt Overlay -->
+                <div id="touch-overlay" class="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none text-center bg-slate-900/80 backdrop-blur-md text-white py-1.5 px-4 rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center space-x-1.5 shadow">
+                    <i class="fa-solid fa-hand-pointer animate-ping"></i>
+                    <span>Drag or move cursor around center to rotate shield</span>
+                </div>
+
+                <!-- Start / Game Over Modal Overlay -->
+                <div id="game-modal" class="absolute inset-0 bg-slate-950/70 backdrop-blur-sm z-30 flex items-center justify-center p-6 transition-all duration-300">
+                    <div class="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 dark:border-slate-800 text-center space-y-6 transform scale-100 transition-transform duration-300">
+                        <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 rounded-full mx-auto flex items-center justify-center text-3xl shadow-inner">
+                            <i id="modal-icon" class="fa-solid fa-brain"></i>
+                        </div>
+                        
+                        <div>
+                            <h2 id="modal-title" class="text-2xl font-black text-slate-950 dark:text-white">Protect Your Focus!</h2>
+                            <p id="modal-desc" class="text-xs text-slate-600 dark:text-slate-400 mt-2 leading-relaxed">
+                                Distractions are approaching! Position your orbital shield to block the red notification hazards, but let gold Knowledge Sparks reach the brain!
+                            </p>
+                        </div>
+
+                        <!-- Mini score summary inside modal (Initially hidden) -->
+                        <div id="modal-scores" class="hidden grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-100 dark:border-slate-850">
+                            <div>
+                                <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold block">Sparks Collected</span>
+                                <span id="modal-stat-sparks" class="text-lg font-black text-slate-900 dark:text-white">0</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] text-slate-400 dark:text-slate-500 uppercase font-extrabold block">High Score</span>
+                                <span id="modal-stat-highscore" class="text-lg font-black text-indigo-600 dark:text-indigo-400">0</span>
+                            </div>
+                        </div>
+
+                        <button onclick="startGame()" id="modal-btn" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-600 text-white font-extrabold text-sm rounded-2xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 flex items-center justify-center space-x-2">
+                            <i class="fa-solid fa-play"></i>
+                            <span>Start Mission</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Upgrades Shop & Instructions Panel (Col span 4) -->
+        <div class="lg:col-span-4 flex flex-col space-y-6">
+            
+            <!-- Real-Time Upgrade Store -->
+            <div class="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm theme-transition">
+                <h3 class="font-extrabold text-slate-950 dark:text-white text-sm mb-4 flex items-center space-x-2">
+                    <i class="fa-solid fa-cart-shopping text-indigo-600 dark:text-indigo-400"></i>
+                    <span>Mental Upgrades Shop</span>
+                </h3>
+
+                <div class="space-y-4">
+                    <!-- Shop Item 1: Shield Arc Width -->
+                    <div id="shop-width" class="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <h4 class="font-bold text-xs text-slate-900 dark:text-white">Shield Expansion</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Increases shield defense angle.</p>
+                            <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400">LVL <span id="level-width">1</span>/5</span>
+                        </div>
+                        <button onclick="buyUpgrade('width')" id="btn-buy-width" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-650 text-xs font-black rounded-xl transition-all flex items-center space-x-1 shadow">
+                            <i class="fa-solid fa-coins text-yellow-400 text-[10px]"></i>
+                            <span id="cost-width">15</span>
+                        </button>
+                    </div>
+
+                    <!-- Shop Item 2: Focus Magnet -->
+                    <div id="shop-magnet" class="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <h4 class="font-bold text-xs text-slate-900 dark:text-white">Cognitive Attraction</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Knowledge sparks move closer.</p>
+                            <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400">LVL <span id="level-magnet">0</span>/5</span>
+                        </div>
+                        <button onclick="buyUpgrade('magnet')" id="btn-buy-magnet" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-650 text-xs font-black rounded-xl transition-all flex items-center space-x-1 shadow">
+                            <i class="fa-solid fa-coins text-yellow-400 text-[10px]"></i>
+                            <span id="cost-magnet">25</span>
+                        </button>
+                    </div>
+
+                    <!-- Shop Item 3: Slow Motion Recovery -->
+                    <div id="shop-slowing" class="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <h4 class="font-bold text-xs text-slate-900 dark:text-white">Focus Buffer</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Slows incoming distraction speed.</p>
+                            <span class="text-[9px] font-bold text-indigo-600 dark:text-indigo-400">LVL <span id="level-slowing">0</span>/5</span>
+                        </div>
+                        <button onclick="buyUpgrade('slowing')" id="btn-buy-slowing" class="px-3 py-2 bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-500 dark:hover:bg-indigo-650 text-xs font-black rounded-xl transition-all flex items-center space-x-1 shadow">
+                            <i class="fa-solid fa-coins text-yellow-400 text-[10px]"></i>
+                            <span id="cost-slowing">35</span>
+                        </button>
+                    </div>
+
+                    <!-- Shop Item 4: Brain Heal -->
+                    <div id="shop-heal" class="p-3 bg-slate-50 dark:bg-slate-950 rounded-2xl border border-slate-100 dark:border-slate-850 flex items-center justify-between">
+                        <div class="space-y-1">
+                            <h4 class="font-bold text-xs text-slate-900 dark:text-white">Mental Rejuvenation</h4>
+                            <p class="text-[10px] text-slate-500 dark:text-slate-400">Restore 1 Brain Heart point.</p>
+                            <span class="text-[9px] font-bold text-rose-500">Instant Repair</span>
+                        </div>
+                        <button onclick="buyUpgrade('heal')" id="btn-buy-heal" class="px-3 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-black rounded-xl transition-all flex items-center space-x-1 shadow">
+                            <i class="fa-solid fa-coins text-yellow-400 text-[10px]"></i>
+                            <span id="cost-heal">50</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Guide Cards & Instructions Board -->
+            <div class="bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm theme-transition">
+                <h3 class="font-extrabold text-slate-950 dark:text-white text-sm mb-4 flex items-center space-x-2">
+                    <i class="fa-solid fa-circle-info text-indigo-600 dark:text-indigo-400"></i>
+                    <span>Focus Guide Index</span>
+                </h3>
+
+                <div class="space-y-3.5 text-xs">
+                    <div class="flex items-start space-x-3">
+                        <div class="p-2 bg-rose-100 dark:bg-rose-950 text-rose-600 dark:text-rose-400 rounded-xl font-bold text-center w-10 flex-shrink-0">
+                            BLOCK
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white">📱 Red Distractions</h4>
+                            <p class="text-slate-500 dark:text-slate-400 mt-0.5">Block gaming pads, snooze alerts, and smartphone notifications from penetrating the brain space.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="p-2 bg-emerald-100 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-center w-10 flex-shrink-0">
+                            CATCH
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white">💡 Golden Knowledge Sparks</h4>
+                            <p class="text-slate-500 dark:text-slate-400 mt-0.5">Allow books, glowing ideas, and stars to bypass the shield and enrich the brain to level up.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-start space-x-3">
+                        <div class="p-2 bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded-xl font-bold text-center w-10 flex-shrink-0">
+                            AUDIO
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-slate-900 dark:text-white">Synthesizer FX</h4>
+                            <p class="text-slate-500 dark:text-slate-400 mt-0.5">Enjoy real-time synthesizer audio generated directly inside your browser with the Web Audio API!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 py-6 mt-12 theme-transition">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-2">
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">© 2026 Focus Defender. Empowering mindfulness, discipline, and core productivity.</p>
+            <p class="text-[10px] text-slate-400 dark:text-slate-500">Synthesizer-enabled web application built with HTML Canvas & Local Storage API.</p>
+        </div>
+    </footer>
+
+    <!-- GAME ENGINE LOGIC SCRIPT -->
+    <script>
+        // Global Game Configuration State Machine
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        let isRunning = false;
+        let highscore = parseInt(localStorage.getItem('focus_def_highscore')) || 0;
+        
+        let score = 0;
+        let coins = 0;
+        let lives = 3;
+        let combo = 0;
+        let itemsCollected = 0;
+
+        // Upgrades Inventory Level Configuration
+        const upgradeStats = {
+            width: { level: 1, max: 5, baseVal: 1.0, step: 0.18, cost: 15, scale: 1.8 },
+            magnet: { level: 0, max: 5, baseVal: 0, step: 1.1, cost: 25, scale: 2.0 },
+            slowing: { level: 0, max: 5, baseVal: 1.0, step: 0.08, cost: 35, scale: 2.2 },
+            heal: { cost: 50 }
+        };
+
+        // Entities Arrays
+        let entities = [];
+        let particles = [];
+        let playerAngle = 0;
+        let shieldRadius = 75;
+        let brainRadius = 35;
+        
+        // Timing loop controls
+        let lastSpawn = 0;
+        let spawnInterval = 1400; // milliseconds
+        let animFrameId = null;
+
+        // Custom Web Audio API synthesizer
+        function playTone(freq, type, duration, slideTo) {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                const audioCtx = new AudioContext();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = type || 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                
+                if (slideTo) {
+                    osc.frequency.exponentialRampToValueAtTime(slideTo, audioCtx.currentTime + duration);
+                }
+                
+                gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                console.log("Audio skipped due to permissions.");
+            }
+        }
+
+        // Handle adaptive resizing of HTML canvas inside its flex box layout container
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            const size = Math.min(container.clientWidth, 600);
+            
+            canvas.width = size;
+            canvas.height = size;
+            
+            // Shield and Brain sizing dynamically relative to window canvas bounds
+            shieldRadius = canvas.width * 0.16;
+            brainRadius = canvas.width * 0.07;
+        }
+
+        // Initialize theme settings on load
+        function initTheme() {
+            const storedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            if (storedTheme === 'dark' || (!storedTheme && systemPrefersDark)) {
+                document.documentElement.classList.add('dark');
+                updateThemeToggleIcon(true);
+            } else {
+                document.documentElement.classList.remove('dark');
+                updateThemeToggleIcon(false);
+            }
+        }
+
+        // Toggle Theme Mode Switcher
+        function toggleTheme() {
+            const isCurrentlyDark = document.documentElement.classList.contains('dark');
+            if (isCurrentlyDark) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                updateThemeToggleIcon(false);
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                updateThemeToggleIcon(true);
+            }
+        }
+
+        // Update Theme Icons
+        function updateThemeToggleIcon(isDark) {
+            const icon = document.getElementById('theme-toggle-icon');
+            if (isDark) {
+                icon.className = "fa-solid fa-sun text-md text-amber-400";
+            } else {
+                icon.className = "fa-solid fa-moon text-md text-slate-700";
+            }
+        }
+
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+            const storedTheme = localStorage.getItem('theme');
+            if (!storedTheme) {
+                if (e.matches) {
+                    document.documentElement.classList.add('dark');
+                    updateThemeToggleIcon(true);
+                } else {
+                    document.documentElement.classList.remove('dark');
+                    updateThemeToggleIcon(false);
+                }
+            }
+        });
+
+        // Initialize listeners and setup layout bounds
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            renderFrame();
+        });
+
+        window.onload = function() {
+            initTheme();
+            resizeCanvas();
+            setupControls();
+            updateShopUI();
+            renderFrame();
+        };
+
+        // SETUP CONTROLS FOR MOUSE & TOUCH SWIPES (Adapts perfectly for touchscreen & laptops)
+        function setupControls() {
+            // Mouse Movement Tracking
+            canvas.addEventListener('mousemove', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left - canvas.width / 2;
+                const y = e.clientY - rect.top - canvas.height / 2;
+                playerAngle = Math.atan2(y, x);
+            });
+
+            // Touch Drag/Touchmove Controller Support
+            canvas.addEventListener('touchmove', (e) => {
+                if (e.touches.length > 0) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.touches[0].clientX - rect.left - canvas.width / 2;
+                    const y = e.touches[0].clientY - rect.top - canvas.height / 2;
+                    playerAngle = Math.atan2(y, x);
+                    e.preventDefault(); // Stop mobile rubberbanding
+                }
+            }, { passive: false });
+
+            canvas.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) {
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.touches[0].clientX - rect.left - canvas.width / 2;
+                    const y = e.touches[0].clientY - rect.top - canvas.height / 2;
+                    playerAngle = Math.atan2(y, x);
+                }
+            }, { passive: true });
+        }
+
+        // UPGRADE SYSTEM CALCULATIONS & TRANSACTION GUARDS
+        function buyUpgrade(type) {
+            const upgrade = upgradeStats[type];
+            if (type === 'heal') {
+                if (coins >= upgrade.cost) {
+                    if (lives < 3) {
+                        coins -= upgrade.cost;
+                        lives++;
+                        playTone(523.25, 'triangle', 0.25); // Happy C5 heal tone
+                        createParticles(canvas.width / 2, canvas.height / 2, '#ef4444', 15);
+                        updateScoresUI();
+                        updateShopUI();
+                    } else {
+                        // Soft error chime for full health
+                        playTone(196, 'sawtooth', 0.15); 
+                    }
+                }
+                return;
+            }
+
+            if (upgrade.level < upgrade.max) {
+                if (coins >= upgrade.cost) {
+                    coins -= upgrade.cost;
+                    upgrade.level++;
+                    upgrade.cost = Math.round(upgrade.cost * upgrade.scale);
+                    
+                    // Powerup melody chime
+                    playTone(329.63 + (upgrade.level * 60), 'sine', 0.3, 659.25);
+                    
+                    createParticles(canvas.width / 2, canvas.height / 2, '#4f46e5', 20);
+                    updateScoresUI();
+                    updateShopUI();
+                } else {
+                    // Out of balance buzz tone
+                    playTone(150, 'square', 0.25);
+                }
+            }
+        }
+
+        function updateShopUI() {
+            // Wide Level Updating
+            document.getElementById('level-width').innerText = upgradeStats.width.level;
+            document.getElementById('cost-width').innerText = upgradeStats.width.level === upgradeStats.width.max ? 'MAX' : upgradeStats.width.cost;
+            
+            // Magnet Level Updating
+            document.getElementById('level-magnet').innerText = upgradeStats.magnet.level;
+            document.getElementById('cost-magnet').innerText = upgradeStats.magnet.level === upgradeStats.magnet.max ? 'MAX' : upgradeStats.magnet.cost;
+
+            // Slow-Mo Level Updating
+            document.getElementById('level-slowing').innerText = upgradeStats.slowing.level;
+            document.getElementById('cost-slowing').innerText = upgradeStats.slowing.level === upgradeStats.slowing.max ? 'MAX' : upgradeStats.slowing.cost;
+
+            // Heal Cost Updating
+            document.getElementById('cost-heal').innerText = upgradeStats.heal.cost;
+        }
+
+        function updateScoresUI() {
+            document.getElementById('ui-score').innerText = score;
+            document.getElementById('ui-coins').innerText = coins;
+            
+            // Combo container updates
+            const comboEl = document.getElementById('ui-combo-container');
+            if (combo > 1) {
+                comboEl.classList.remove('hidden');
+                document.getElementById('ui-combo').innerText = combo;
+            } else {
+                comboEl.classList.add('hidden');
+            }
+
+            // Hearts renderer UI
+            const container = document.getElementById('heart-container');
+            container.innerHTML = '';
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    container.innerHTML += `<i class="fa-solid fa-heart text-rose-500 text-lg transition-transform duration-300 hover:scale-110"></i>`;
+                } else {
+                    container.innerHTML += `<i class="fa-regular fa-heart text-slate-300 dark:text-slate-700 text-lg"></i>`;
+                }
+            }
+        }
+
+        // PARTICLES ENGINE
+        function createParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 0.5) * 6,
+                    radius: Math.random() * 3 + 1,
+                    alpha: 1,
+                    decay: Math.random() * 0.03 + 0.015,
+                    color: color
+                });
+            }
+        }
+
+        // GAME FLOW STATE MANIPULATIONS
+        function startGame() {
+            document.getElementById('game-modal').classList.add('opacity-0', 'pointer-events-none');
+            
+            // Start State Resets
+            score = 0;
+            lives = 3;
+            combo = 0;
+            itemsCollected = 0;
+            entities = [];
+            particles = [];
+            
+            updateScoresUI();
+            
+            isRunning = true;
+            lastSpawn = Date.now();
+            
+            // Warm initial melody start sound
+            playTone(261.63, 'sine', 0.2); // C4
+            setTimeout(() => playTone(329.63, 'sine', 0.2), 150); // E4
+            setTimeout(() => playTone(392.00, 'sine', 0.2), 300); // G4
+            setTimeout(() => playTone(523.25, 'sine', 0.3), 450); // C5
+            
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            gameLoop();
+        }
+
+        function triggerGameOver() {
+            isRunning = false;
+            cancelAnimationFrame(animFrameId);
+
+            // Calculate state highscore persistence
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('focus_def_highscore', highscore);
+            }
+
+            // Play failure minor chord arpeggio
+            playTone(293.66, 'sawtooth', 0.3); // D4
+            setTimeout(() => playTone(246.94, 'sawtooth', 0.3), 200); // B3
+            setTimeout(() => playTone(196.00, 'sawtooth', 0.5), 400); // G3
+
+            // Reveal modal overlay with stats populated
+            const modal = document.getElementById('game-modal');
+            document.getElementById('modal-title').innerText = "Focus Slipped!";
+            document.getElementById('modal-desc').innerText = "Distractions overwhelmed your cognitive focus. Invest in shop upgrades below to strengthen your defenses!";
+            document.getElementById('modal-icon').className = "fa-solid fa-heart-crack";
+            document.getElementById('modal-btn').innerHTML = `<i class="fa-solid fa-arrow-rotate-left"></i><span>Retry Focus Duty</span>`;
+            
+            document.getElementById('modal-stat-sparks').innerText = itemsCollected;
+            document.getElementById('modal-stat-highscore').innerText = highscore;
+            document.getElementById('modal-scores').classList.remove('hidden');
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        // SPAWN DYNAMICS (Gradually speeds up and adds harder combinations as score grows)
+        function spawnItem() {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = canvas.width / 2 + 50; // spawn off-screen
+            const x = Math.cos(angle) * dist + canvas.width / 2;
+            const y = Math.sin(angle) * dist + canvas.height / 2;
+
+            // Spawn Chance weights: 60% Distraction, 40% Knowledge Spark
+            const isDistraction = Math.random() < 0.6;
+            
+            // Distraction properties
+            const distractionIcons = ['📱', '🎮', '💤', '🍿'];
+            const sparkIcons = ['⭐', '💡', '📚', '✨'];
+            
+            const randomIcon = isDistraction 
+                ? distractionIcons[Math.floor(Math.random() * distractionIcons.length)]
+                : sparkIcons[Math.floor(Math.random() * sparkIcons.length)];
+
+            // Calculate Base speed influenced by upgrade level
+            const slowFactor = 1.0 - (upgradeStats.slowing.level * upgradeStats.slowing.step);
+            const rawSpeed = (Math.random() * 1.2 + 1.2) * (1 + (score / 350)); // Scale speed with score
+            const finalSpeed = isDistraction ? (rawSpeed * slowFactor) : rawSpeed;
+
+            entities.push({
+                x: x,
+                y: y,
+                targetX: canvas.width / 2,
+                targetY: canvas.height / 2,
+                speed: finalSpeed,
+                radius: 14,
+                isDistraction: isDistraction,
+                icon: randomIcon,
+                angle: angle
+            });
+        }
+
+        // DYNAMIC RENDERING LOOP
+        function gameLoop() {
+            if (!isRunning) return;
+
+            const now = Date.now();
+            // Adapt spawn intervals based on current score
+            const currentSpawnRate = Math.max(550, spawnInterval - (score * 2.5));
+            if (now - lastSpawn > currentSpawnRate) {
+                spawnItem();
+                lastSpawn = now;
+            }
+
+            updatePhysics();
+            renderFrame();
+
+            animFrameId = requestAnimationFrame(gameLoop);
+        }
+
+        // PHYSICS ENGINE & COLLISION GUARDS
+        function updatePhysics() {
+            // 1. Update Entities (Knowledge Sparks & Distractions)
+            for (let i = entities.length - 1; i >= 0; i--) {
+                const item = entities[i];
+                
+                // Calculate movement vector pointing directly toward center (the Brain)
+                const dx = item.targetX - item.x;
+                const dy = item.targetY - item.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // Magnet attraction pulls sparks towards center if upgrade level is unlocked
+                if (!item.isDistraction && upgradeStats.magnet.level > 0) {
+                    const magnetPull = upgradeStats.magnet.level * upgradeStats.magnet.step;
+                    item.speed += magnetPull * 0.05;
+                }
+
+                if (distance > 1) {
+                    item.x += (dx / distance) * item.speed;
+                    item.y += (dy / distance) * item.speed;
+                }
+
+                // COLLISION 1: Orbital Shield block checking
+                const currentDist = Math.sqrt(
+                    (item.x - canvas.width / 2) ** 2 + 
+                    (item.y - canvas.height / 2) ** 2
+                );
+
+                // Check if element crossed into active shield ring zone
+                if (currentDist <= shieldRadius + 12 && currentDist >= shieldRadius - 12) {
+                    // Check angle difference
+                    const angleToCenter = Math.atan2(item.y - canvas.height / 2, item.x - canvas.width / 2);
+                    
+                    // Normalize angles between -PI and PI
+                    let diff = Math.abs(playerAngle - angleToCenter);
+                    if (diff > Math.PI) diff = Math.PI * 2 - diff;
+
+                    // Fetch active shield width based on bought upgrades
+                    const activeShieldWidth = upgradeStats.width.baseVal + (upgradeStats.width.level * upgradeStats.width.step);
+                    
+                    if (diff <= activeShieldWidth / 2) {
+                        // Collision hit with active shield!
+                        entities.splice(i, 1);
+                        
+                        if (item.isDistraction) {
+                            // Perfect Deflection of a Distraction!
+                            score += 10 + (combo * 2);
+                            coins += 2 + Math.floor(combo / 2);
+                            combo++;
+                            
+                            // High metallic blip bounce synth audio
+                            playTone(440 + (combo * 30), 'triangle', 0.15);
+                            createParticles(item.x, item.y, '#f59e0b', 12);
+                            updateScoresUI();
+                        } else {
+                            // Shield blocked study material! Breaks combo streak
+                            combo = 0;
+                            // Negative low buzz audio
+                            playTone(180, 'square', 0.25);
+                            createParticles(item.x, item.y, '#e2e8f0', 8);
+                            updateScoresUI();
+                        }
+                        continue;
+                    }
+                }
+
+                // COLLISION 2: Center core Brain collision checking
+                if (currentDist <= brainRadius + 15) {
+                    entities.splice(i, 1);
+                    
+                    if (item.isDistraction) {
+                        // Distraction breached defense line! Damage applied
+                        lives--;
+                        combo = 0;
+                        
+                        // Impact sound effect
+                        playTone(120, 'sawtooth', 0.4, 60);
+                        createParticles(item.x, item.y, '#ef4444', 25);
+                        updateScoresUI();
+
+                        if (lives <= 0) {
+                            triggerGameOver();
+                        }
+                    } else {
+                        // Nourishing knowledge absorbed!
+                        score += 15 + (combo * 3);
+                        coins += 5 + combo;
+                        itemsCollected++;
+                        
+                        // Golden celestial sound chime
+                        playTone(523.25, 'sine', 0.25, 1046.50);
+                        createParticles(item.x, item.y, '#10b981', 15);
+                        updateScoresUI();
+                    }
+                }
+            }
+
+            // 2. Physics of particle systems
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // CANVAS GRAPHICS RENDERING
+        function renderFrame() {
+            const isDark = document.documentElement.classList.contains('dark');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+
+            // 1. Draw Adaptive Background Space Grid
+            ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.03)';
+            ctx.lineWidth = 1;
+            const gridSize = 40;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+
+            // 2. Draw Orbit Track Dotted Line
+            ctx.setLineDash([4, 6]);
+            ctx.strokeStyle = isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.08)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(cx, cy, shieldRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]); // Reset line dash
+
+            // 3. Draw Center Focus Aura & Glowing Brain 🧠
+            const glowGrd = ctx.createRadialGradient(cx, cy, brainRadius * 0.4, cx, cy, brainRadius * 1.5);
+            if (isDark) {
+                glowGrd.addColorStop(0, 'rgba(99, 102, 241, 0.25)');
+                glowGrd.addColorStop(1, 'rgba(99, 102, 241, 0)');
+            } else {
+                glowGrd.addColorStop(0, 'rgba(79, 70, 229, 0.12)');
+                glowGrd.addColorStop(1, 'rgba(79, 70, 229, 0)');
+            }
+            ctx.fillStyle = glowGrd;
+            ctx.beginPath();
+            ctx.arc(cx, cy, brainRadius * 1.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Center Brain Glyph
+            ctx.font = `${Math.round(brainRadius * 1.25)}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧠', cx, cy);
+
+            // 4. Draw Interactive Shield Block Arc
+            const activeWidth = upgradeStats.width.baseVal + (upgradeStats.width.level * upgradeStats.width.step);
+            ctx.beginPath();
+            ctx.arc(cx, cy, shieldRadius, playerAngle - activeWidth / 2, playerAngle + activeWidth / 2);
+            
+            // Premium Gradient color on Shield
+            const shieldGrd = ctx.createSweepGradient ? ctx.createSweepGradient(cx, cy, playerAngle, playerAngle + activeWidth) : null;
+            ctx.strokeStyle = isDark ? '#6366f1' : '#4f46e5';
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            
+            // Glowing filters during dark mode loops
+            if (isDark) {
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = 'rgba(99, 102, 241, 0.8)';
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0; // Reset shadow glow
+
+            // 5. Draw Incoming Sorter Entities
+            entities.forEach(item => {
+                // Drawing outer glow alerts for items
+                ctx.beginPath();
+                ctx.arc(item.x, item.y, item.radius + 4, 0, Math.PI * 2);
+                ctx.fillStyle = item.isDistraction 
+                    ? 'rgba(239, 68, 68, 0.08)' 
+                    : 'rgba(245, 158, 11, 0.1)';
+                ctx.fill();
+
+                // Draw solid background node
+                ctx.beginPath();
+                ctx.arc(item.x, item.y, item.radius, 0, Math.PI * 2);
+                ctx.fillStyle = isDark ? '#1e293b' : '#ffffff';
+                ctx.strokeStyle = item.isDistraction ? '#f87171' : '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                ctx.fill();
+
+                // Entity glyph icon
+                ctx.font = '14px Arial';
+                ctx.fillText(item.icon, item.x, item.y);
+            });
+
+            // 6. Draw Particle Emitter Systems
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+    </script>
+</body>
+</html>
